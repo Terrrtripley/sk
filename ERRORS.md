@@ -292,8 +292,41 @@ Real issues encountered during development, with root cause and fix. All are res
 - **Fix:** added `!this.aimTarget.banishing` to the keep check and to `drawReticle`, so auto-aim immediately re-picks a valid enemy (or clears) when the current target starts its banish.
 - **Verified:** F4 reproduction — `aimTarget` is no longer the banishing enemy at 0.17s/0.35s; the next cast targets another visible enemy. Full gloves suite then passes 46/46.
 
+## Milestone 6
+
+### 46. The mega portal sailed past the enemies it was aimed at
+- **Symptom:** the first focused test placed three enemies 90–110px ahead and fired the third cast; the portal flew the full 180px, bloomed behind them and killed nothing. It only felt correct when the target happened to stand at the exact maximum range or against a wall.
+- **Root cause:** `KamuiMegaPortal.update` only checked tile/gate/crate collision and the range limit; it had no enemy contact test. A projectile that is meant to "shoot a massive portal at a group" needs to stop on the group, not treat enemies as empty space.
+- **Fix:** during flight it now checks every living, non-banishing enemy against `radius * 0.85 + 9`; on contact it snaps the bloom to the enemy centre and blooms immediately. Wall/gate/crate contact still blooms at the last valid position, and the range limit remains the fallback.
+- **Verified:** the same setup now blooms at the first enemy and kills the nearby group (`MEGA BANISH x3` in the arena test); a cast into a wall blooms 19px ahead at the wall face.
+
+### 47. The mega portal's close fade was computed backwards
+- **Symptom:** the outer crimson rune ring stayed at full opacity through the close while the vortex shrank, then vanished abruptly.
+- **Root cause:** `fade` was written as `1 - this.scale()`. `scale()` returns 1 at full size and falls to 0 during close, so "fade" went 0 → 1 instead of 1 → 0.
+- **Fix:** the portal now computes an explicit `closing` fraction from `bloomT` against `growTime + holdTime + closeTime` and uses `fade = 1 - closing`.
+- **Verified:** late-bloom screenshots show the ring dimming with the vortex; the effect is removed at the end of the close window.
+
+### 48. Wave HUD rows overlapped on the half-size UI grid
+- **Symptom:** at 480/552/640 virtual widths the `BEST` and `ENEMY HP` rows in the new ENDLESS panel collided, and the progress label sat under the bar; the panel's 82px height was too short for five rows plus a bar at a 7px font.
+- **Root cause:** rows were first authored at 12px pitch but with values 50 and 57 (7px apart), and the label/bar overlapped after the wide-screen review.
+- **Fix:** the panel grew to 96px, rows use an 11px pitch (`LEFT` 34, `BEST` 45, `ENEMY HP` 56), the progress label sits at 69 and the bar at 79. The layout was re-reviewed at 480, 552 and 640 virtual widths.
+- **Verified:** screenshots at 800x600 and 2560x1080 show five separated rows and a visible progress bar.
+
+### 49. `WaveArena.drawWalls` read a nonexistent `time` argument
+- **Symptom:** the wall runes were static (or would have been `NaN`-timed) because the shared draw signature has no `time` parameter.
+- **Root cause:** `drawWalls(ctx, camX, camY, viewW, viewH)` was copied from `Dungeon`, but the rune pulse was written as `arguments[5]`, which is always `undefined` at that call site.
+- **Fix:** `drawFloor` caches `this._time = time`, and `drawWalls` reads it for the pulse.
+- **Verified:** wall runes animate during the live wave screenshots; no console errors.
+
+### 50. Harness-only false alarms (not game bugs)
+- **Symptom A:** a real-key Shift test reported `phaseActive 0` — the harness pressed Shift while the game was in the **home** state, where skills are intentionally inert.
+- **Symptom B:** the first "normal cast" assertion counted leftover `KamuiMegaPortal` effects from the previous test as if they belonged to the new cast.
+- **Symptom C:** `window.DungeonSK.startWaves()` returned false from the dungeon, so `game.waves` was null in the next assertion.
+- **Fix:** the harness now starts a dungeon before keyboard phase tests, counts each effect list delta per cast, and the debug `startWaves()` hook returns home first if needed. These were test-tooling mistakes, not gameplay defects; the underlying behaviour was correct.
+
 ## Notes
 - Milestone 5 verification: seven-script syntax check, Traveler rift/phase suite, Kamui Gloves banish suite (46/46), M1–M4 regression suite (61/61), save migration, visual review, zero console/page errors.
+- Milestone 6 verification: eight-script syntax check, focused wave/phase/mega suite (46/46), extra suite (15/15), M5 consolidated suite re-run (22/22), arena/sprite audit, 18s live bot run, wave 30 perf at 60fps, zero console/page errors in HTTP and `file://` boots.
 
 
 

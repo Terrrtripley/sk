@@ -747,7 +747,10 @@
         start: () => this.startRun(),
         home: () => this.returnHome(),
         startFromHome: () => this.startRun(),
-        startWaves: () => this.startWaveRun(),
+        startWaves: () => {
+          if (this.state !== "home") this.returnHome();
+          return this.startWaveRun();
+        },
         waveState: () =>
           this.waves
             ? {
@@ -927,6 +930,7 @@
     /** Enter the endless wave arena from the sanctuary rift gate. */
     startWaveRun() {
       if (this.state !== "home" || !this.player) return false;
+      if (!SK.WaveArena || !SK.WaveDirector) return false;
       this.audio.unlock();
       const heroId = this.selectedHeroId();
       this.player = new SK.Player(0, 0, heroId);
@@ -2941,7 +2945,7 @@
       const px = 346;
       const py = 24;
       const pw = 128;
-      const ph = 82;
+      const ph = 96;
       this.drawPanel(ctx, px, py, pw, ph, { border: "#5a2a34", alpha: 0.82 });
       const w = this.waves;
       const wave = w ? Math.max(1, w.wave) : 1;
@@ -2958,14 +2962,14 @@
         shadow: "#05070b",
       });
 
-      FONT.draw(ctx, "LEFT", px + 7, py + 36, { color: "#8fa0b8", alpha: 0.9 });
-      FONT.draw(ctx, String(left), px + pw - 7, py + 36, {
+      FONT.draw(ctx, "LEFT", px + 7, py + 34, { color: "#8fa0b8", alpha: 0.9 });
+      FONT.draw(ctx, String(left), px + pw - 7, py + 34, {
         color: left > 0 ? "#ffd0d6" : "#7fe6a8",
         align: "right",
         shadow: "#05070b",
       });
-      FONT.draw(ctx, "BEST", px + 7, py + 46, { color: "#8fa0b8", alpha: 0.9 });
-      FONT.draw(ctx, String(this.bestWave()), px + pw - 7, py + 46, {
+      FONT.draw(ctx, "BEST", px + 7, py + 45, { color: "#8fa0b8", alpha: 0.9 });
+      FONT.draw(ctx, String(this.bestWave()), px + pw - 7, py + 45, {
         color: "#7dd3fc",
         align: "right",
         shadow: "#05070b",
@@ -2988,7 +2992,7 @@
         frac = clamp((total - left) / total, 0, 1);
       }
       const bx = px + 7;
-      const by = py + 76;
+      const by = py + 79;
       const bw = pw - 14;
       ctx.save();
       ctx.fillStyle = "#070a10";
@@ -3001,7 +3005,7 @@
       ctx.globalAlpha = 0.75;
       ctx.fillRect(bx, by, Math.max(0, Math.round(bw * frac)), 1);
       ctx.restore();
-      FONT.draw(ctx, label, px + pw / 2, py + 66, {
+      FONT.draw(ctx, label, px + pw / 2, py + 69, {
         color: "#b8a6b2",
         align: "center",
         alpha: 0.85,

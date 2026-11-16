@@ -7,12 +7,72 @@ Milestone 4: per-floor difficulty scaling — enemies gain HP and spawn in great
 Milestone 5: Dimensional Traveler hero with the Kamui Rift dimension shift and Intangibility, plus the Kamui Gloves portal-banish weapon.
 Milestone 5.1: full-window display scaling — the 480x270 design view widens up to 640x270 on wide windows so the canvas fills the browser.
 Milestone 5.2: the interface renders on its own half-size pixel grid (50% of the UI's previous size) while the world stays unchanged.
+Milestone 6: cancellable Intangibility, the Kamui Gloves mega portal, and the endless wave survival mode with compounding +10% HP / +10% enemy count per wave.
 
-## Status: Milestone 5.2 complete (verified)
+## Status: Milestone 6 complete (verified)
 
 Last updated: 2026-11-15
 
-All Milestone 1–4 mechanics remain intact and are regression-tested. The full test matrix is in `TESTING.md`; real bugs and fixes are in `ERRORS.md`.
+All Milestone 1–6 mechanics remain intact and are regression-tested. The full test matrix is in `TESTING.md`; real bugs and fixes are in `ERRORS.md`.
+
+## Milestone 6 — cancellable phase, mega Kamui portal, endless waves
+
+### Task A — cancellable Intangibility (`entities.js`)
+- [x] `activatePhase` treats a second Shift press as a cancel instead of `ALREADY PHASED`
+- [x] Cancel zeroes `phaseActive` immediately: `isInvulnerable()` false, `canAttack()` true, `phaseFx` fades over ~0.24s
+- [x] The activation cooldown is not refunded (the 9.0s cycle keeps counting from the original activation)
+- [x] Cancel feedback: collapsing eye ring, violet particles, `SOLID!` float and a new `phaseOff` sound
+- [x] Re-activation during the remaining cooldown still shows `PHASE COOLDOWN`
+- [x] Shift in the rift still shows `EXIT RIFT FIRST`; cancelling works even if the rift was entered while phased
+- [x] Hero card copy now reads `UNHITTABLE - SHIFT TO CANCEL`
+- [x] HUD unchanged in layout; the phase row switches straight from active seconds to the cooldown sweep
+
+### Task B — mega Kamui portal every third cast (`entities.js`, `kamui.js`, `main.js`)
+- [x] `Player.kamuiCasts` counts successful normal casts (0 → 1 → 2 → mega → 0); reset on hero setup/switch
+- [x] The third cast creates a `KamuiMegaPortal` instead of a single-target banish
+- [x] Mega config lives on the weapon (`summon.mega`): speed 250, flight radius 31, bloom radius 78, range 180, splash 76, hold 0.62s, close 0.3s
+- [x] The portal travels on the aim angle and blooms on the first enemy it touches, or on a wall/gate/crate
+- [x] Bloom splash executes every enemy within 76px through `Enemy.kamuiSplash` (no `9999` damage float), breaks crates and consumes hostile bullets in the radius
+- [x] Crimson VFX: red-tinted Kamui vortex variant (crimson haze, ember ribbons, hot rim, rune ring, lightning cracks, core flare) plus trailing red/black discs and a hot leading crescent
+- [x] Impact feedback: `MEGA BANISH xN` float, dual crimson/white shockwaves, 20 red + 12 black particles, 6px shake and a new `kamuiMega` sound
+- [x] Three cast pips in the weapon slot; pips turn red and pulse when the next cast is mega
+- [x] Pulsing red `MEGA` badge beside the glove's energy badge when armed
+- [x] `MEGA READY` float after the second successful cast
+- [x] Casts with no target still show `NO TARGET`, use the 0.45s retry cooldown and do **not** advance the counter
+
+### Task C — Endless Wave mode (`waves.js`, `sprites.js`, `home.js`, `main.js`, `index.html`)
+- [x] New `waves.js` module loaded after `home.js` and before `entities.js`
+- [x] `SK.Waves` exposes the growth constants and the arena/director constructors
+- [x] 34x19-tile (544x304px) sealed obsidian arena: border walls, four 2x2 basalt pillars, glowing central rift, red-veined floor tiles
+- [x] New baked art: `arenaFloor0/1/2` (16x16, fully opaque) and `arenaWall` (16x24, fully opaque)
+- [x] `WaveArena` implements the full dungeon query/draw surface; `rooms`, `connections`, `gates` are empty and `portal` is null
+- [x] Crimson rift gate floating above Gravito's pedestal in the sanctuary (drawn in world space, with a `[E] ENDLESS WAVES` / `BEST WAVE N` prompt at 30px)
+- [x] `E` enters the arena; walking away and pressing E does nothing; the dungeon portal flow is unchanged
+- [x] Enemy HP multiplier `1.1^(wave−1)` (compounding +10% of base per wave)
+- [x] Enemy count `round(5 × 1.1^(wave−1))`, min 1, capped at 40 (5/6/6/7 at waves 1–4, 12 at wave 10, 31 at wave 20, 40 from wave 23)
+- [x] Turrets `1 + floor((wave−1)/5)`, capped at 4; at least one guard and one shaman while there are 2+ goblins
+- [x] Spawn points are free tiles at least 104px from the player, spaced 26px apart, with a ring fallback
+- [x] Each spawn opens a small crimson `KamuiVortex`; every enemy is alerted immediately
+- [x] Wave clear: +1 Gem, +1 armor (or +1 HP if armor is full), best-wave save, `WAVE N CLEARED` notice and a 2.4s intermission
+- [x] Every 4th wave clear drops a random gold-tier weapon and a heart at the arena centre
+- [x] Wave 1 starts after a 1.0s `ENDLESS WAVES` intro notice; intermissions start the next wave automatically
+- [x] Top-centre badge becomes `WAVE N`; the minimap is replaced by an `ENDLESS` panel (wave, enemies left, best, enemy HP bonus, progress/countdown bar)
+- [x] Game-over overlay shows `WAVE REACHED` and `BEST WAVE`; `R`/click returns home
+- [x] `bestWave` persisted in `dungeonSK.save.v1`, loaded defensively, written on wave clear, death and mid-run return-home
+- [x] HOME confirm copy generalised to `CURRENT RUN & WEAPONS`
+- [x] Debug hooks: `startWaves()`, `waveState()`, `bestWave()`, `setKamuiCasts(n)`
+- [x] New sounds: `phaseOff`, `waveStart`, `waveClear`, `kamuiMega`
+- [x] Sanctuary hint now reads `BLUE: DUNGEON - RED: ENDLESS WAVES`
+
+### Verification summary (Milestone 6)
+- [x] `node --check` passes on all eight scripts
+- [x] New focused suite 46/46 PASS: save defaults/migration, Shift start + real-key cancel, damage after cancel, cooldown denial, gate prompt + E start, wave-1 roster/HP, arena API, mega-on-third-cast, splash + bullet clearing, normal casts 1–2, wave 5 (+46% HP, 7 enemies), wave clear rewards/intermission/auto-next, wave 30 cap and +1486% HP, 60.6fps with 40 enemies, death/best save, dungeon/rift/Knight/Gravito regression, zero console/page errors
+- [x] Extra suite 15/15 PASS: wall-bloom mega, mega charge reset, wave pause/HOME confirm, mid-run best-wave save, wave HUD at 800x600 and 2560x1080, E-away failsafe, reload persistence (bestWave 33), `file://` boot with 8 scripts, zero errors
+- [x] Milestone 5 consolidated suite 22/22 PASS after the sprite-count update (rift, banish, phase, save/reload); zero errors
+- [x] Arena/sprite audit: 64 sprites, arena floors 16x16 fully opaque, arena wall 16x24 fully opaque, 528 floor tiles, no missing names
+- [x] 18-second bot run in a live wave 12 arena with real mouse/keyboard: kills, phase, rift and mega casts, zero errors
+- [x] Visual review: home rift gate + prompt, wave 1/2/6/12/30 arenas, mega travel/bloom in the arena and in a dungeon room, wave panel, pause/confirm, wave death overlay, 1280x800/2560x1080 layouts
+
 
 ## Milestone 5.1 — full-window display scaling
 

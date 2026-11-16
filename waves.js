@@ -533,6 +533,33 @@
           glow: true,
           drag: 2.4,
         });
+        // Between-wave recovery: armor first, then HP. Endless waves need a
+        // trickle because the arena has no chests or crates to loot.
+        if (p.armor < p.maxArmor) {
+          p.armor += 1;
+          game.addFloatText(p.x, p.y - 52, "+1 AR", "#9fdcff", { scale: 1, rise: 18, life: 1.0 });
+          game.spawnParticles(p.x, p.y - 12, 8, {
+            color: "#66c8ff",
+            speed: 70,
+            life: 0.35,
+            size: 1,
+            spread: 2.8,
+            glow: true,
+            drag: 3,
+          });
+        } else if (p.hp < p.maxHp) {
+          p.heal(1);
+          game.addFloatText(p.x, p.y - 52, "+1 HP", "#ff7b86", { scale: 1, rise: 18, life: 1.0 });
+          game.spawnParticles(p.x, p.y - 12, 8, {
+            color: "#ff8888",
+            speed: 70,
+            life: 0.35,
+            size: 1,
+            spread: 2.8,
+            glow: true,
+            drag: 3,
+          });
+        }
       }
 
       if (game.saveData && this.wave > (game.saveData.bestWave || 0)) {
@@ -546,6 +573,7 @@
         const cx = (W * TILE) / 2;
         const cy = (H * TILE) / 2;
         game.dropWeapon(def, cx + this.rng() * 40 - 20, cy, { toss: true });
+        game.spawnPickups(cx - 14, cy - 4, "hp", 1, 18);
         game.addFloatText(cx, cy - 30, "WEAPON DROP!", "#ffd86b", { scale: 1, rise: 18, life: 1.2 });
         sub = "+1 GEM  -  WEAPON DROP!";
       }

@@ -429,7 +429,7 @@
         id: "intangibility",
         name: "INTANGIBILITY",
         short: "PHASE",
-        desc: "UNHITTABLE - SHIFT AGAIN: CANCEL",
+        desc: "UNHITTABLE - SHIFT TO CANCEL",
         detail: "4.0S ACTIVE / 9.0S CYCLE",
         duration: 4.0,
         cooldown: 9.0,
@@ -772,7 +772,7 @@
 
       if (this.riftCooldown > 0) {
         game.sfx("deny");
-        game.addFloatText(this.x, this.y - 42, "RIFT COOLDOWN", "#c4b5fd", {
+        game.addFloatText(this.x, this.y - 56, "RIFT COOLDOWN", "#c4b5fd", {
           scale: 1,
           rise: 16,
           life: 0.8,
@@ -822,7 +822,7 @@
       if (this.phaseActive > 0) return this.cancelPhase(game);
       if (this.rift !== "normal") {
         game.sfx("deny");
-        game.addFloatText(this.x, this.y - 42, "EXIT RIFT FIRST", "#c4b5fd", {
+        game.addFloatText(this.x, this.y - 56, "EXIT RIFT FIRST", "#c4b5fd", {
           scale: 1,
           rise: 16,
           life: 0.8,
@@ -831,7 +831,7 @@
       }
       if (this.phaseCooldown > 0) {
         game.sfx("deny");
-        game.addFloatText(this.x, this.y - 42, "PHASE COOLDOWN", "#c4b5fd", {
+        game.addFloatText(this.x, this.y - 56, "PHASE COOLDOWN", "#c4b5fd", {
           scale: 1,
           rise: 16,
           life: 0.8,
@@ -905,9 +905,9 @@
         glow: true,
         drag: 3.2,
       });
-      game.addFloatText(this.x, this.y - 44, "SOLID!", "#c4b5fd", {
+      game.addFloatText(this.x, this.y - 30, "SOLID!", "#c4b5fd", {
         scale: 1,
-        rise: 16,
+        rise: 10,
         life: 0.8,
       });
       return true;

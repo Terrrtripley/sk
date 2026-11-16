@@ -827,7 +827,7 @@
       ctx.save();
       ctx.globalCompositeOperation = "lighter";
       const hot = 0.55 + 0.45 * Math.sin(time * 6.4 + this.seed);
-      ctx.globalAlpha = 0.4 + hot * 0.3;
+      ctx.globalAlpha = (0.4 + hot * 0.3) * fade;
       ctx.fillStyle = "#ff4658";
       const spin = time * 0.9;
       for (let i = 0; i < 40; i++) {
