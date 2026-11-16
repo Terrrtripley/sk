@@ -1,0 +1,64 @@
+/* =========================================================================
+   DUNGEON SK — style.css
+   Minimal host page: a full-window pixel canvas that covers the browser;
+   the game itself letterboxes only when the window is narrower than 16:9.
+   ========================================================================= */
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  background-color: #0d0f14;
+  background-image:
+    radial-gradient(ellipse 80% 70% at 50% 42%, rgba(42, 52, 72, 0.38), rgba(13, 15, 20, 0) 72%);
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  color: #dfe5f0;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#game-shell {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  padding: 0;
+}
+
+#game {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+  background: #07090d;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  box-shadow:
+    0 0 0 1px #1e2533,
+    0 0 0 5px #0a0c11,
+    0 28px 80px rgba(0, 0, 0, 0.65);
+  outline: none;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+noscript {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  color: #dfe5f0;
+  font-size: 14px;
+}
