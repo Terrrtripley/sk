@@ -30,15 +30,16 @@ All Milestone 1–6 mechanics remain intact and are regression-tested. The full 
 ### Task B — mega Kamui portal every third cast (`entities.js`, `kamui.js`, `main.js`)
 - [x] `Player.kamuiCasts` counts successful normal casts (0 → 1 → 2 → mega → 0); reset on hero setup/switch
 - [x] The third cast creates a `KamuiMegaPortal` instead of a single-target banish
-- [x] Mega config lives on the weapon (`summon.mega`): speed 250, flight radius 31, bloom radius 78, range 180, splash 76, hold 0.62s, close 0.3s
-- [x] The portal travels on the aim angle and blooms on the first enemy it touches, or on a wall/gate/crate
+- [x] Mega config lives on the weapon (`summon.mega`): bloom radius 78, splash 76, hold 0.62s, close 0.3s
+- [x] The huge portal opens on the targeted enemy using the same acquisition as the normal banish (sticky target first, then nearest visible within 280px with LOS); it is not a projectile and has no travel state
+- [x] A no-target mega cast shows `NO TARGET`, uses the 0.45s retry and keeps the charge armed
 - [x] Bloom splash executes every enemy within 76px through `Enemy.kamuiSplash` (no `9999` damage float), breaks crates and consumes hostile bullets in the radius
-- [x] Crimson VFX: red-tinted Kamui vortex variant (crimson haze, ember ribbons, hot rim, rune ring, lightning cracks, core flare) plus trailing red/black discs and a hot leading crescent
+- [x] Crimson VFX: red-tinted Kamui vortex variant (crimson haze, ember ribbons, hot rim, rune ring, lightning cracks, core flare) plus a hot opening flash and collapsing rune rings on close
 - [x] Impact feedback: `MEGA BANISH xN` float, dual crimson/white shockwaves, 20 red + 12 black particles, 6px shake and a new `kamuiMega` sound
 - [x] Three cast pips in the weapon slot; pips turn red and pulse when the next cast is mega
 - [x] Pulsing red `MEGA` badge beside the glove's energy badge when armed
 - [x] `MEGA READY` float after the second successful cast
-- [x] Casts with no target still show `NO TARGET`, use the 0.45s retry cooldown and do **not** advance the counter
+- [x] Casts with no target still show `NO TARGET`, use the 0.45s retry cooldown, do **not** advance the counter and keep the mega armed
 
 ### Task C — Endless Wave mode (`waves.js`, `sprites.js`, `home.js`, `main.js`, `index.html`)
 - [x] New `waves.js` module loaded after `home.js` and before `entities.js`
@@ -67,11 +68,11 @@ All Milestone 1–6 mechanics remain intact and are regression-tested. The full 
 ### Verification summary (Milestone 6)
 - [x] `node --check` passes on all eight scripts
 - [x] New focused suite 46/46 PASS: save defaults/migration, Shift start + real-key cancel, damage after cancel, cooldown denial, gate prompt + E start, wave-1 roster/HP, arena API, mega-on-third-cast, splash + bullet clearing, normal casts 1–2, wave 5 (+46% HP, 7 enemies), wave clear rewards/intermission/auto-next, wave 30 cap and +1486% HP, 60.6fps with 40 enemies, death/best save, dungeon/rift/Knight/Gravito regression, zero console/page errors
-- [x] Extra suite 15/15 PASS: wall-bloom mega, mega charge reset, wave pause/HOME confirm, mid-run best-wave save, wave HUD at 800x600 and 2560x1080, E-away failsafe, reload persistence (bestWave 33), `file://` boot with 8 scripts, zero errors
+- [x] Extra suite 18/18 PASS: targeted mega rules (no target/crate cover keeps the charge, portal centred on the target, splash group), mega charge reset, wave pause/HOME confirm, mid-run best-wave save, wave HUD at 800x600 and 2560x1080, E-away failsafe, reload persistence (bestWave 33), `file://` boot with 8 scripts, zero errors
 - [x] Milestone 5 consolidated suite 22/22 PASS after the sprite-count update (rift, banish, phase, save/reload); zero errors
 - [x] Arena/sprite audit: 64 sprites, arena floors 16x16 fully opaque, arena wall 16x24 fully opaque, 528 floor tiles, no missing names
 - [x] 18-second bot run in a live wave 12 arena with real mouse/keyboard: kills, phase, rift and mega casts, zero errors
-- [x] Visual review: home rift gate + prompt, wave 1/2/6/12/30 arenas, mega travel/bloom in the arena and in a dungeon room, wave panel, pause/confirm, wave death overlay, 1280x800/2560x1080 layouts
+- [x] Visual review: home rift gate + prompt, wave 1/2/6/12/30 arenas, targeted mega spawn/bloom in the arena and in a dungeon room, wave panel, pause/confirm, wave death overlay, 1280x800/2560x1080 layouts
 
 
 ## Milestone 5.1 — full-window display scaling

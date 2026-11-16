@@ -21,15 +21,15 @@ Result: pass on all eight scripts.
 - **Boot/save:** fresh save has `bestWave: 0`; the `waves.js` module, `SK.WaveArena`, `SK.WaveDirector` and all four new arena sprites load; the home room has `waveGate` and its proximity check; 64 sprites total.
 - **Intangibility cancel:** real `ShiftLeft` starts 3.83s of phase (4.0s minus 0.17s), invulnerable and unable to attack; a second real `ShiftLeft` zeroes `phaseActive`, restores `canAttack`, leaves the cooldown at 8.73s, emits `SOLID!` and a collapsing eye ring; `takeDamage(1)` then removes one armor; the next Shift is denied with `PHASE COOLDOWN`.
 - **Wave entry:** standing at the gate sets `homeWaveNear`; real `E` starts wave mode in a `WaveArena` with zero rooms and no portal; wave 1 spawns 5 enemies (guards, shamans and exactly one turret) at base HP 9/12/18 with a `WAVE 1` notice.
-- **Mega portal:** setting the counter to 2 and casting fires exactly one `KamuiMegaPortal`, resets the counter to 0 and shows `MEGA KAMUI!`; at 0.33s the portal is blooming at the first enemy, the nearby group is dead (`MEGA BANISH x3`), a hostile bullet inside the radius is consumed, and the room stays locked until the survivors are dealt with.
+- **Mega portal:** setting the counter to 2 and casting opens exactly one `KamuiMegaPortal` centred on the acquired target, resets the counter to 0 and shows `MEGA KAMUI!`; the target and any enemy inside 76px are executed (`MEGA BANISH`), a hostile bullet inside the radius is consumed, an enemy 80px from the target survives, and the room stays locked until the survivors are dealt with.
 - **Normal casts:** the first and second successful casts each banish one target, advance the counter to 1 then 2, and create no mega portal.
 - **Scaling:** wave 5 fields 7 enemies at +46% HP (guard 18 / shaman 13 / turret 26); wave 6 auto-spawns 8; wave 30 fields the 40-enemy cap at +1486% HP (guard 190 / shaman 143 / turret 286; max 286/min 143 observed across the roster).
 - **Clear/reward:** clearing wave 5 sets `rest`, `cleared = 5`, awards one Gem and one armor, writes `bestWave: 5` to `localStorage` immediately, shows `WAVE 5 CLEARED` and starts the 2.4s intermission; the next wave spawns automatically.
 - **Death/meta:** death at wave 30 sets `gameover` and stores `bestWave: 30`; real `R` returns to `HomeRoom` with the best wave and unlock list intact.
 - **Regression:** real portal E enters the unchanged 6-room/3-combat dungeon; the Traveler rift still enters/exits with the 6s cooldown; Knight Overdrive is still 5.0s; Gravito still builds its wells; F3 debug opens; zero console/page errors.
 
-### Extra suite (`waves_extra.js`) — 15/15 PASS, 0 console/page errors
-- Firing the mega at a wall blooms it immediately at the wall face (travelled 19px).
+### Extra suite (`waves_extra.js`) — 18/18 PASS, 0 console/page errors
+- Mega targeting uses the normal banish rules: no visible target returns `NO TARGET`, keeps the charge at 2 and uses the 0.45s retry; a crate between the player and a sticky target blocks the cast exactly like a normal banish; with a clear target the portal is created at `(target.x, target.y - 10)`, kills the target plus a second enemy in the radius, and leaves no travel state.
 - `setHero`/`switchHero` reset the mega charge.
 - Pause `Esc`, HOME confirm `H`, cancel `N` and confirm `Y` all work in wave mode; confirming mid-run records the current wave as best (7) and returns home.
 - The wave HUD survives live resizes: 800x600 → 480x270 view / 960x540 backing, 2560x1080 → 640x270 view / 1280x540 backing, both with `mode === "waves"`.
@@ -44,11 +44,11 @@ Result: pass on all eight scripts.
 - **Arena/sprite audit:** `arenaFloor0/1/2` are 16x16 with 256/256 opaque pixels; `arenaWall` is 16x24 with 384/384 opaque pixels; the arena has 528 floor tiles, solid borders/pillars, a 544x304 content bounds, no portal and no rooms; all 64 sprite names resolve.
 - **Live bot run:** 18 seconds of real held LMB, mouse sweeps, WASD, Shift and F in a wave 12 arena — kills, banishes, a mega cast, phase and rift all executed, zero console/page errors.
 - **Performance:** 40 live enemies at wave 30 hold 60.1–60.6 fps at 1280x800; particles stayed under ~30 per sample.
-- **Visual review:** home rift gate + `[E] ENDLESS WAVES` / `BEST WAVE 33` prompt; wave 1, 3, 6, 12 and 30 arenas at 800x600 and 2560x1080; mega travel, bloom and late fade in the arena and in a dungeon room; MEGA badge and cast pips; wave panel rows; pause/confirm overlays; wave death overlay; debug overlay.
+- **Visual review:** home rift gate + `[E] ENDLESS WAVES` / `BEST WAVE 33` prompt; wave 1, 3, 6, 12 and 30 arenas at 800x600 and 2560x1080; targeted mega opening, bloom and late fade in the arena and in a dungeon room; MEGA badge and cast pips; wave panel rows; pause/confirm overlays; wave death overlay; debug overlay.
 
 ### Known limitations (Milestone 6)
 - The wave roster caps at 40 enemies from wave 23 while HP keeps compounding. This is deliberate; see `DECISIONS.md`.
-- A mega charge can be fired into empty space if the player casts with no enemies; the armed pips/`MEGA` badge are the only warning.
+- A mega cast requires a visible enemy; with none, the cast fails with `NO TARGET` and the charge stays armed (so it cannot be wasted on empty space).
 - The spawn-vortex visual is a ground effect and does not delay the enemy; a spawn can shoot shortly after it appears (its first shot waits for the 0.9–2.0s fire cooldown, plus the turret charge).
 
 

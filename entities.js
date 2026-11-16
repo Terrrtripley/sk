@@ -315,13 +315,11 @@
         portalRadius: 34,
         spinTime: 0.9,
         popTime: 0.9,
-        // Every third cast: a large red-tinged rift projectile that blooms
-        // into a massive portal and splash-executes everything inside it.
+        // Every third cast: a massive red-tinged portal that opens on the
+        // targeted enemy (same acquisition as the normal banish) and
+        // splash-executes everything caught in it.
         mega: {
-          speed: 250,
-          radius: 31,
           bloomRadius: 78,
-          range: 180,
           splash: 76,
           damage: 9999,
           hold: 0.62,
@@ -1331,35 +1329,53 @@
      * Kamui Gloves: open a portal on a visible enemy and banish it. The enemy
      * spins on its sagittal axis and shrinks, then pops instead of arriving in
      * another dimension. Infinite damage: the target is executed at the end.
+     * Every third successful cast instead opens the massive red portal on the
+     * target and splash-executes the group around it.
      */
     castKamuiGloves(game, weapon) {
       const summon = weapon.summon || {};
       const range = summon.range || 280;
       this.cooldowns[this.weapon] = weapon.cooldown || 2.0;
 
-      // Every third successful cast fires the massive portal instead of the
-      // single-target banish. It is a projectile, so it can be aimed at a
-      // group (or at empty space if the player mistimes it).
+      // Same acquisition for the normal banish and the mega portal: sticky
+      // target first, then the nearest visible enemy within range.
+      let target = null;
+      if (this.aimTarget && this.aimTarget.alive && !this.aimTarget.banishing) {
+        const d = Math.hypot(this.aimTarget.x - this.x, this.aimTarget.y - 10 - this.centerY());
+        if (d <= range && game.targetVisible(this.x, this.centerY(), this.aimTarget)) target = this.aimTarget;
+      }
+      if (!target) target = game.findAimTarget(this.x, this.centerY(), range, this);
+      if (!target) {
+        this.cooldowns[this.weapon] = 0.45;
+        game.sfx("deny");
+        game.addFloatText(this.x, this.y - 42, "NO TARGET", "#c4b5fd", {
+          scale: 1,
+          rise: 14,
+          life: 0.7,
+        });
+        return false;
+      }
+
+      // Every third successful cast: a massive portal opens on the target.
       if (this.kamuiCasts % 3 === 2) {
         const mega = summon.mega || {};
+        const mx = target.x;
+        const my = target.y - 10;
         this.kamuiCasts = 0;
-        const mx = this.x + Math.cos(this.aimAngle) * 11;
-        const my = this.centerY() + Math.sin(this.aimAngle) * 7;
         if (SK.KamuiMegaPortal) {
           game.effects.push(
-            new SK.KamuiMegaPortal(mx, my, this.aimAngle, {
-              speed: mega.speed,
-              radius: mega.radius,
+            new SK.KamuiMegaPortal(mx, my, {
               bloomRadius: mega.bloomRadius,
-              range: mega.range,
-              splash: mega.splash,
-              damage: mega.damage,
               hold: mega.hold,
               close: mega.close,
               seed: Math.random() * 100,
             })
           );
         }
+        game.kamuiMegaImpact(mx, my, {
+          radius: mega.splash || 76,
+          damage: mega.damage || 9999,
+        });
         game.sfx(weapon.megaSfx || "kamuiMega");
         game.shake(3.6, 0.3);
         game.spawnParticles(mx, my, 18, {
@@ -1387,22 +1403,6 @@
         return true;
       }
 
-      let target = null;
-      if (this.aimTarget && this.aimTarget.alive && !this.aimTarget.banishing) {
-        const d = Math.hypot(this.aimTarget.x - this.x, this.aimTarget.y - 10 - this.centerY());
-        if (d <= range && game.targetVisible(this.x, this.centerY(), this.aimTarget)) target = this.aimTarget;
-      }
-      if (!target) target = game.findAimTarget(this.x, this.centerY(), range, this);
-      if (!target) {
-        this.cooldowns[this.weapon] = 0.45;
-        game.sfx("deny");
-        game.addFloatText(this.x, this.y - 42, "NO TARGET", "#c4b5fd", {
-          scale: 1,
-          rise: 14,
-          life: 0.7,
-        });
-        return false;
-      }
       const dur = summon.spinTime || 0.9;
       const radius = summon.portalRadius || 30;
       if (SK.KamuiVortex) {

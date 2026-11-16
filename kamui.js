@@ -623,101 +623,39 @@
   // Mega Kamui portal (every third Kamui Gloves cast)
   // -------------------------------------------------------------------------
   /**
-   * A large red-tinged rift disc that is fired forward, then blooms into a
-   * massive vortex. Travel/bloom visuals live here; the splash damage is
-   * applied by `game.kamuiMegaImpact` at the moment of the bloom.
+   * A massive red-tinged Kamui portal that opens directly on the targeted
+   * enemy. It is not a projectile: the gloves acquire the target exactly like
+   * the normal banish, then call `game.kamuiMegaImpact` for the splash and
+   * place this bloom visual on the target. It grows for 0.16s, holds, then
+   * closes.
    */
   class KamuiMegaPortal {
     /**
      * @param {number} x
      * @param {number} y
-     * @param {number} angle travel direction (radians)
-     * @param {{speed?:number, radius?:number, bloomRadius?:number, range?:number,
-     *          splash?:number, damage?:number, hold?:number, close?:number,
-     *          seed?:number}} [opts]
+     * @param {{bloomRadius?:number, hold?:number, close?:number, seed?:number}} [opts]
      */
-    constructor(x, y, angle, opts) {
+    constructor(x, y, opts) {
       opts = opts || {};
       this.x = x;
       this.y = y;
-      this.angle = angle == null ? 0 : angle;
-      this.dirX = Math.cos(this.angle);
-      this.dirY = Math.sin(this.angle);
-      this.speed = opts.speed || 245;
-      this.radius = opts.radius || 31;
       this.bloomRadius = opts.bloomRadius || 78;
-      this.range = opts.range || 180;
-      this.splash = opts.splash || 76;
-      this.damage = opts.damage || 9999;
       this.holdTime = opts.hold == null ? 0.62 : opts.hold;
       this.closeTime = opts.close == null ? 0.3 : opts.close;
       this.growTime = 0.16;
       this.seed = opts.seed == null ? Math.random() * 100 : opts.seed;
-      this.state = "travel";
-      this.travelled = 0;
       this.bloomT = 0;
-      this.trail = [];
       this.dead = false;
       this.layer = "ground";
     }
 
-    update(dt, game) {
+    update(dt) {
       if (this.dead) return;
-      if (this.state === "travel") {
-        const step = this.speed * dt;
-        const nx = this.x + this.dirX * step;
-        const ny = this.y + this.dirY * step;
-        // The rift swallows the first enemy it touches, blooming on the spot
-        // so a well-aimed mega cast cannot sail past its target.
-        if (game && game.enemies) {
-          for (const e of game.enemies) {
-            if (!e.alive || e.banishing) continue;
-            if (Math.hypot(e.x - nx, e.y - 10 - ny) <= this.radius * 0.85 + 9) {
-              this.x = e.x;
-              this.y = e.y - 10;
-              this.bloom(game);
-              return;
-            }
-          }
-        }
-        const blocked =
-          game &&
-          game.dungeon &&
-          (game.dungeon.rectHitsTiles(nx - 5, ny - 5, 10, 10) ||
-            (game.gateAtRect && game.gateAtRect(nx - 5, ny - 5, 10, 10)) ||
-            (game.crateAtRect && game.crateAtRect(nx - 5, ny - 5, 10, 10)));
-        if (blocked) {
-          this.bloom(game);
-          return;
-        }
-        this.trail.push({ x: this.x, y: this.y, a: 1 });
-        if (this.trail.length > 9) this.trail.shift();
-        this.x = nx;
-        this.y = ny;
-        this.travelled += step;
-        if (this.travelled >= this.range) this.bloom(game);
-        return;
-      }
-      for (const t of this.trail) t.a = Math.max(0, t.a - dt * 3.6);
       this.bloomT += dt;
       if (this.bloomT >= this.growTime + this.holdTime + this.closeTime) this.dead = true;
     }
 
-    bloom(game) {
-      if (this.state !== "travel") return;
-      this.state = "bloom";
-      this.bloomT = 0;
-      if (game && game.kamuiMegaImpact) {
-        game.kamuiMegaImpact(this.x, this.y, {
-          radius: this.splash,
-          damage: this.damage,
-          angle: this.angle,
-        });
-      }
-    }
-
     scale() {
-      if (this.state === "travel") return 1;
       const grow = Math.min(1, this.bloomT / this.growTime);
       const eased = 1 - Math.pow(1 - grow, 2.2);
       let k = 0.44 + 0.56 * eased;
@@ -730,68 +668,6 @@
 
     draw(ctx, game) {
       const time = game ? game.time : this.bloomT;
-      if (this.state === "travel") {
-        const wob = 1 + Math.sin(time * 16 + this.seed) * 0.05;
-
-        // Dark-red motion streak behind the disc.
-        ctx.save();
-        ctx.globalCompositeOperation = "lighter";
-        for (let i = 0; i < this.trail.length; i++) {
-          const t = this.trail[i];
-          const a = (i + 1) / this.trail.length;
-          ctx.globalAlpha = 0.2 * a * t.a;
-          ctx.fillStyle = i % 3 === 0 ? "#ff4658" : "#5e1622";
-          const rr = this.radius * (0.35 + a * 0.45);
-          ctx.beginPath();
-          ctx.ellipse(t.x, t.y, rr, rr * 0.72, this.angle, 0, TAU);
-          ctx.fill();
-        }
-
-        // Hot red aura around the disc.
-        const aura = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius * 2.1);
-        aura.addColorStop(0, "rgba(255,70,88,0.36)");
-        aura.addColorStop(0.5, "rgba(160,16,34,0.2)");
-        aura.addColorStop(1, "rgba(80,6,16,0)");
-        ctx.globalAlpha = 1;
-        ctx.fillStyle = aura;
-        ctx.fillRect(this.x - this.radius * 2.2, this.y - this.radius * 2.2, this.radius * 4.4, this.radius * 4.4);
-        ctx.restore();
-
-        drawVortex(ctx, this.x, this.y, this.radius * wob, time + this.seed, {
-          alpha: 1,
-          seed: this.seed,
-          squash: 0.9,
-          haze: 0.75,
-          rings: 11,
-          red: true,
-        });
-
-        // Bright leading edge: a crescent of hot red pixels.
-        ctx.save();
-        ctx.globalCompositeOperation = "lighter";
-        ctx.globalAlpha = 0.6 + 0.3 * Math.sin(time * 20);
-        ctx.fillStyle = "#ffd0d6";
-        for (let i = 0; i < 9; i++) {
-          const a = this.angle + (i / 8 - 0.5) * 1.4;
-          ctx.fillRect(
-            Math.round(this.x + Math.cos(a) * this.radius * 1.02),
-            Math.round(this.y + Math.sin(a) * this.radius * 0.92),
-            1,
-            1
-          );
-        }
-        ctx.restore();
-
-        // Black core keeps the disc readable against the crimson floor.
-        ctx.save();
-        ctx.fillStyle = "#050002";
-        ctx.beginPath();
-        ctx.ellipse(this.x, this.y, this.radius * 0.34, this.radius * 0.3, 0, 0, TAU);
-        ctx.fill();
-        ctx.restore();
-        return;
-      }
-
       const k = this.scale();
       if (k <= 0.01) return;
       const rr = this.bloomRadius * k;
@@ -801,6 +677,7 @@
         1
       );
       const fade = 1 - closing;
+      const opening = 1 - clamp(this.bloomT / 0.22, 0, 1);
 
       // Massive crimson halo.
       ctx.save();
@@ -822,6 +699,30 @@
         rings: 12,
         red: true,
       });
+
+      // Opening flash: the portal punched open on the target.
+      if (opening > 0.01) {
+        ctx.save();
+        ctx.globalCompositeOperation = "lighter";
+        ctx.globalAlpha = opening * 0.85;
+        ctx.fillStyle = "#ffd0d6";
+        for (let i = 0; i < 18; i++) {
+          const a = (i / 18) * TAU + this.seed;
+          const len = rr * (0.4 + hash(i + this.seed) * 0.62);
+          ctx.fillRect(
+            Math.round(this.x + Math.cos(a) * len),
+            Math.round(this.y + Math.sin(a) * len * 0.88),
+            1,
+            1
+          );
+        }
+        const flash = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, rr * 0.9);
+        flash.addColorStop(0, "rgba(255,210,214," + (opening * 0.4).toFixed(3) + ")");
+        flash.addColorStop(1, "rgba(255,45,63,0)");
+        ctx.fillStyle = flash;
+        ctx.fillRect(this.x - rr, this.y - rr, rr * 2, rr * 2);
+        ctx.restore();
+      }
 
       // Rotating crimson rune ring just outside the ink.
       ctx.save();

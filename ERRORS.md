@@ -294,11 +294,12 @@ Real issues encountered during development, with root cause and fix. All are res
 
 ## Milestone 6
 
-### 46. The mega portal sailed past the enemies it was aimed at
+### 46. The mega portal was a projectile that could sail past its target (superseded design)
 - **Symptom:** the first focused test placed three enemies 90–110px ahead and fired the third cast; the portal flew the full 180px, bloomed behind them and killed nothing. It only felt correct when the target happened to stand at the exact maximum range or against a wall.
-- **Root cause:** `KamuiMegaPortal.update` only checked tile/gate/crate collision and the range limit; it had no enemy contact test. A projectile that is meant to "shoot a massive portal at a group" needs to stop on the group, not treat enemies as empty space.
-- **Fix:** during flight it now checks every living, non-banishing enemy against `radius * 0.85 + 9`; on contact it snaps the bloom to the enemy centre and blooms immediately. Wall/gate/crate contact still blooms at the last valid position, and the range limit remains the fallback.
-- **Verified:** the same setup now blooms at the first enemy and kills the nearby group (`MEGA BANISH x3` in the arena test); a cast into a wall blooms 19px ahead at the wall face.
+- **Root cause:** the first implementation fired the portal along the aim angle as a projectile, with no enemy contact test and no relation to the normal cast's target acquisition. A projectile aimed by a coarse angle is not the same promise as "open a portal on an enemy".
+- **Interim fix:** during flight it checked every living, non-banishing enemy inside its flight radius and snapped the bloom to the first one.
+- **Final design (per follow-up request):** the mega was changed from a projectile to a target-spawned portal. `castKamuiGloves` now acquires a target once with the normal banish rules (sticky, then nearest visible within 280px with LOS), then branches: the first two casts banish, the third calls `game.kamuiMegaImpact` at the target and places a stationary `KamuiMegaPortal` bloom. The travel state, aim-angle sweep, wall-contact bloom and enemy-contact check were all removed. A no-target cast keeps the charge armed and uses the 0.45s retry.
+- **Verified:** no target → `NO TARGET`, counter stays at 2, 0.45s retry, no portal; crate-blocked target → same; clear target → portal created at `(target.x, target.y-10)`, the target and a second enemy inside 76px die, no travel state.
 
 ### 47. The mega portal's close fade was computed backwards
 - **Symptom:** the outer crimson rune ring stayed at full opacity through the close while the vortex shrank, then vanished abruptly.
